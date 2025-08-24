@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Video Profit Calc">
+    <title>Video Profit Calculator</title>
+    <style>
+        /* ... all your existing CSS stays here ... */
+        /* For brevity, CSS omitted but should remain unchanged */
+        /* Add this for advanced card spacing if you want */
+        .advanced-results-card {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            margin-top: 10px;
+        }
+        .advanced-results-card .card-title {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="app-header">
+            <div class="app-title">Video Profit Calculator</div>
+            <div class="app-subtitle">Quick profitability analysis for video gigs</div>
+        </div>
+        <div class="content">
+            <!-- ... all your input cards unchanged ... -->
+
+            <!-- Add the Show Advanced Calculations checkbox here -->
+            <div class="card">
+                <div class="input-group">
+                    <label>
+                        <input type="checkbox" id="showAdvanced" onchange="calculate(); hapticFeedback()"> 
+                        Show Advanced Calculations
+                    </label>
+                </div>
+            </div>
+
+            <div class="card results-card">
+                <div class="card-title" data-emoji="📊">Results</div>
+                <div class="results-grid">
+                    <div class="result-item">
+                        <div class="result-value" id="totalCosts">$0</div>
+                        <div class="result-label">Total Costs</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="netProfit">$0</div>
+                        <div class="result-label">Net Profit</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="profitMargin">0%</div>
+                        <div class="result-label">Profit Margin</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="effectiveHourly">$0</div>
+                        <div class="result-label">Hourly Rate</div>
+                    </div>
+                </div>
+                <div class="profitability-status" id="profitStatus">
+                    Enter project details to see analysis
+                </div>
+            </div>
+
+            <!-- Advanced Results Section (hidden by default) -->
+            <div class="card advanced-results-card" id="advancedResults" style="display:none;">
+                <div class="card-title" data-emoji="🧮">Advanced Calculations</div>
+                <div class="results-grid">
+                    <div class="result-item">
+                        <div class="result-value" id="taxEstimate">$0</div>
+                        <div class="result-label">Estimated Tax (15%)</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="roiResult">0%</div>
+                        <div class="result-label">ROI</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="markupResult">0%</div>
+                        <div class="result-label">Markup %</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="breakEvenFee">$0</div>
+                        <div class="result-label">Break-even Fee</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="grossHourly">$0</div>
+                        <div class="result-label">Gross Hourly Rate</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="profitPerDeliverable">$0</div>
+                        <div class="result-label">Profit per Deliverable</div>
+                    </div>
+                </div>
+                <div style="margin-top:15px;">
+                    <strong>Cost Category Breakdown:</strong>
+                    <ul style="color:white; font-size:0.9rem; list-style:none; padding-left:0;">
+                        <li id="laborCostBreakdown"></li>
+                        <li id="equipmentCostBreakdown"></li>
+                        <li id="crewCostBreakdown"></li>
+                        <li id="productionCostBreakdown"></li>
+                    </ul>
+                </div>
+                <div id="opportunityCost" style="margin-top:10px;"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="shareResults(); hapticFeedback()">
+                    📤 Share Results
+                </button>
+                <button class="btn btn-secondary" onclick="resetAll(); hapticFeedback()">
+                    🔄 Reset
+                </button>
+            </div>
+            <div style="height: 80px;"></div>
+        </div>
+        <div class="floating-summary" id="floatingSummary">
+            <div class="summary-row">
+                <span>Revenue:</span>
+                <span id="summaryRevenue">$0</span>
+            </div>
+            <div class="summary-row">
+                <span>Costs:</span>
+                <span id="summaryCosts">$0</span>
+            </div>
+            <div class="summary-row">
+                <span>Net Profit:</span>
+                <span id="summaryProfit">$0</span>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Existing JS variables and functions ...
+
+        function calculate() {
+            const projectFee = parseFloat(document.getElementById('projectFee').value) || 0;
+            const equipmentRental = parseFloat(document.getElementById('equipmentRental').value) || 0;
+            const equipmentWear = parseFloat(document.getElementById('equipmentWear').value) || 0;
+            const yourHours = parseFloat(document.getElementById('yourHours').value) || 0;
+            const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+            const crewCosts = parseFloat(document.getElementById('crewCosts').value) || 0;
+            const travel = parseFloat(document.getElementById('travel').value) || 0;
+            const materials = parseFloat(document.getElementById('materials').value) || 0;
+            const postProduction = parseFloat(document.getElementById('postProduction').value) || 0;
+            const miscCosts = parseFloat(document.getElementById('miscCosts').value) || 0;
+
+            // For advanced calculations
+            const numberOfDeliverables = 1; // Optionally make this an input field
+
+            // Core calculations
+            const laborCost = yourHours * hourlyRate;
+            const totalCosts = equipmentRental + equipmentWear + laborCost + crewCosts + travel + materials + postProduction + miscCosts;
+            const netProfit = projectFee - totalCosts;
+            const profitMargin = projectFee > 0 ? (netProfit / projectFee) * 100 : 0;
+            const effectiveHourly = yourHours > 0 ? netProfit / yourHours : 0;
+
+            document.getElementById('totalCosts').textContent = '$' + totalCosts.toFixed(0);
+            document.getElementById('netProfit').textContent = '$' + netProfit.toFixed(0);
+            document.getElementById('profitMargin').textContent = profitMargin.toFixed(1) + '%';
+            document.getElementById('effectiveHourly').textContent = '$' + effectiveHourly.toFixed(0);
+
+            document.getElementById('summaryRevenue').textContent = '$' + projectFee.toFixed(0);
+            document.getElementById('summaryCosts').textContent = '$' + totalCosts.toFixed(0);
+            document.getElementById('summaryProfit').textContent = '$' + netProfit.toFixed(0);
+
+            const statusElement = document.getElementById('profitStatus');
+            if (profitMargin >= 20) {
+                statusElement.textContent = '🎉 Highly Profitable - Excellent margins!';
+                statusElement.className = 'profitability-status profitable';
+            } else if (profitMargin >= 10) {
+                statusElement.textContent = '✅ Profitable - Good margins';
+                statusElement.className = 'profitability-status profitable';
+            } else if (profitMargin >= 0) {
+                statusElement.textContent = '⚠️ Break-even - Consider raising prices';
+                statusElement.className = 'profitability-status break-even';
+            } else {
+                statusElement.textContent = '❌ Loss - Adjust pricing or costs';
+                statusElement.className = 'profitability-status unprofitable';
+            }
+
+            if (projectFee > 0 || totalCosts > 0) {
+                showFloatingSummary();
+            } else {
+                hideFloatingSummary();
+            }
+
+            // ADVANCED CALCULATIONS
+            const showAdvanced = document.getElementById('showAdvanced').checked;
+            const advancedResults = document.getElementById('advancedResults');
+
+            if (showAdvanced) {
+                advancedResults.style.display = 'block';
+
+                // Estimated Tax (15% of net profit)
+                const taxRate = 0.15;
+                const taxEstimate = netProfit > 0 ? netProfit * taxRate : 0;
+                document.getElementById('taxEstimate').textContent = '$' + taxEstimate.toFixed(0);
+
+                // ROI
+                const roi = totalCosts > 0 ? (netProfit / totalCosts) * 100 : 0;
+                document.getElementById('roiResult').textContent = roi.toFixed(1) + '%';
+
+                // Markup %
+                const markup = totalCosts > 0 ? ((projectFee - totalCosts) / totalCosts) * 100 : 0;
+                document.getElementById('markupResult').textContent = markup.toFixed(1) + '%';
+
+                // Break-even fee
+                document.getElementById('breakEvenFee').textContent = '$' + totalCosts.toFixed(0);
+
+                // Gross Hourly Rate (before costs)
+                const grossHourly = yourHours > 0 ? projectFee / yourHours : 0;
+                document.getElementById('grossHourly').textContent = '$' + grossHourly.toFixed(0);
+
+                // Profit per Deliverable (assumes 1 unless you add a field)
+                const profitPerDeliverable = numberOfDeliverables > 0 ? netProfit / numberOfDeliverables : 0;
+                document.getElementById('profitPerDeliverable').textContent = '$' + profitPerDeliverable.toFixed(0);
+
+                // Cost Category Breakdown
+                const laborPercent = totalCosts > 0 ? (laborCost / totalCosts) * 100 : 0;
+                document.getElementById('laborCostBreakdown').textContent = `Labor: $${laborCost.toFixed(0)} (${laborPercent.toFixed(1)}%)`;
+
+                const equipmentCost = equipmentRental + equipmentWear;
+                const equipmentPercent = totalCosts > 0 ? (equipmentCost / totalCosts) * 100 : 0;
+                document.getElementById('equipmentCostBreakdown').textContent = `Equipment: $${equipmentCost.toFixed(0)} (${equipmentPercent.toFixed(1)}%)`;
+
+                const crewPercent = totalCosts > 0 ? (crewCosts / totalCosts) * 100 : 0;
+                document.getElementById('crewCostBreakdown').textContent = `Crew: $${crewCosts.toFixed(0)} (${crewPercent.toFixed(1)}%)`;
+
+                const productionCost = travel + materials + postProduction + miscCosts;
+                const productionPercent = totalCosts > 0 ? (productionCost / totalCosts) * 100 : 0;
+                document.getElementById('productionCostBreakdown').textContent = `Production: $${productionCost.toFixed(0)} (${productionPercent.toFixed(1)}%)`;
+
+                // Opportunity Cost (compare to your target hourly)
+                let opportunityMsg = '';
+                if (effectiveHourly > hourlyRate) {
+                    opportunityMsg = `👍 You earned more than your target rate ($${hourlyRate}/hr)!`;
+                } else if (effectiveHourly > 0) {
+                    opportunityMsg = `⚠️ You earned less than your target rate ($${hourlyRate}/hr).`;
+                } else {
+                    opportunityMsg = '';
+                }
+                document.getElementById('opportunityCost').textContent = opportunityMsg;
+
+            } else {
+                advancedResults.style.display = 'none';
+            }
+
+            saveToStorage();
+        }
+
+        // ... rest of your JS remains unchanged ...
+        // hapticFeedback, showFloatingSummary, hideFloatingSummary, shareResults, resetAll, saveToStorage, loadFromStorage, clearStorage, scroll handling, etc.
+        // Make sure calculate() is called on input change and page load
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFromStorage();
+            calculate();
+
+            window.addEventListener('scroll', handleScroll, { passive: true });
+
+            document.querySelectorAll('input').forEach(input => {
+                input.addEventListener('focus', () => {
+                    setTimeout(() => input.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                });
+            });
+        });
+
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                window.scrollTo(0, window.scrollY + 1);
+                window.scrollTo(0, window.scrollY - 1);
+            }, 500);
+        });
+    </script>
+</body>
+</html>
