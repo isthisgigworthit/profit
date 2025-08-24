@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Gig Profitability Calc">
+    <title>Gig Profitability Calculator</title>
+    <style>
+        /* ...unchanged CSS above... */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        .app-container {
+            max-width: 100vw;
+            min-height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+        }
+        .app-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: env(safe-area-inset-top, 20px) 20px 20px 20px;
+            text-align: center;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+        .app-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .app-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        /* ...unchanged CSS below... */
+
+        /* New floating profit window styles, MOBILE-OPTIMIZED */
+        .floating-profit-window {
+            position: fixed;
+            bottom: 20px;
+            right: 12px;
+            left: auto;
+            min-width: 150px;
+            max-width: 85vw;
+            background: rgba(255,255,255,0.96);
+            box-shadow: 0 4px 24px rgba(102,126,234,0.18);
+            border-radius: 16px;
+            border: 1px solid rgba(102,126,234,0.18);
+            z-index: 9999;
+            padding: 12px 14px;
+            transition: box-shadow 0.2s, left 0.2s, top 0.2s, right 0.2s, bottom 0.2s;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            backdrop-filter: blur(14px);
+        }
+        .floating-profit-window:active {
+            box-shadow: 0 8px 32px rgba(102,126,234,0.22);
+            cursor: grabbing;
+        }
+        .floating-profit-header {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 4px;
+            text-align: center;
+            letter-spacing: 0.03em;
+        }
+        .floating-profit-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.96rem;
+            margin-bottom: 2px;
+            padding: 2px 0;
+        }
+        .floating-profit-row:last-child {
+            font-weight: 700;
+            color: #3182ce;
+            margin-bottom: 0;
+        }
+        .floating-profit-label {
+            color: #4a5568;
+        }
+        .floating-profit-value {
+            color: #2d3748;
+        }
+        /* Hide old floating summary */
+        .floating-summary {
+            display: none !important;
+        }
+        @media (min-width: 600px) {
+            .floating-profit-window {
+                top: 80px;
+                right: 20px;
+                left: auto;
+                bottom: auto;
+                min-width: 180px;
+                max-width: 320px;
+                font-size: 1rem;
+                padding: 12px 18px;
+            }
+        }
+        @media (max-width: 600px) {
+            .floating-profit-window {
+                bottom: 20px;
+                right: 12px;
+                left: auto;
+                top: auto;
+                min-width: 150px;
+                max-width: 85vw;
+                font-size: 0.96rem;
+                padding: 12px 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="app-header">
+            <div class="app-title">Gig Profitability Calculator</div>
+            <div class="app-subtitle">Quick profitability analysis for your gig</div>
+        </div>
+        <div class="content">
+            <!-- ...unchanged form... -->
+            <div class="card">
+                <div class="card-title" data-emoji="💰">Revenue</div>
+                <div class="input-group">
+                    <label for="projectFee">Total Project Fee ($)</label>
+                    <input type="number" id="projectFee" placeholder="3500" min="0" oninput="calculate(); hapticFeedback()">
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title" data-emoji="📱">Equipment</div>
+                <div class="input-group">
+                    <label for="equipmentRental">Rental Costs ($)</label>
+                    <input type="number" id="equipmentRental" placeholder="200" min="0" oninput="calculate(); hapticFeedback()">
+                </div>
+                <div class="input-group">
+                    <label for="equipmentWear">Wear & Depreciation ($)</label>
+                    <input type="number" id="equipmentWear" placeholder="150" min="0" oninput="calculate(); hapticFeedback()">
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title" data-emoji="👤">Your Time</div>
+                <div class="input-group">
+                    <label for="yourHours">Total Hours</label>
+                    <input type="number" id="yourHours" placeholder="25" min="0" oninput="calculate(); hapticFeedback()">
+                </div>
+                <div class="input-group">
+                    <label for="hourlyRate">Your Rate ($/hour)</label>
+                    <input type="number" id="hourlyRate" placeholder="75" min="0" oninput="calculate(); hapticFeedback()">
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title" data-emoji="👥">Additional Crew</div>
+                <div class="input-group">
+                    <label for="crewCosts">Crew Costs ($)</label>
+                    <input type="number" id="crewCosts" placeholder="400" min="0" oninput="calculate(); hapticFeedback()">
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title" data-emoji="📋">Production Expenses</div>
+                <div class="input-group">
+                    <label for="travel">Travel & Transport ($)</label>
+                    <input type="number" id="travel" placeholder="120" min="0" oninput="calculate(); hapticFeedback()">
+                </div>
+                <div class="input-group">
+                    <label for="materials">Materials & Supplies ($)</label>
+                    <input type="number" id="materials" placeholder="80" min="0" oninput="calculate(); hapticFeedback()">
+                </div>
+                <div class="input-group">
+                    <label for="postProduction">Post-Production ($)</label>
+                    <input type="number" id="postProduction" placeholder="250" min="0" oninput="calculate(); hapticFeedback()">
+                </div>
+                <div class="input-group">
+                    <label for="miscCosts">Miscellaneous ($)</label>
+                    <input type="number" id="miscCosts" placeholder="100" min="0" oninput="calculate(); hapticFeedback()">
+                </div>
+            </div>
+            <div class="card results-card">
+                <div class="card-title" data-emoji="📊">Results</div>
+                <div class="results-grid">
+                    <div class="result-item">
+                        <div class="result-value" id="totalCosts">$0</div>
+                        <div class="result-label">Total Costs</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="netProfit">$0</div>
+                        <div class="result-label">Net Profit</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="profitMargin">0%</div>
+                        <div class="result-label">Profit Margin</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="effectiveHourly">$0</div>
+                        <div class="result-label">Hourly Rate</div>
+                    </div>
+                </div>
+                <div class="profitability-status" id="profitStatus">
+                    Enter project details to see analysis
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="shareResults(); hapticFeedback()">
+                    📤 Share Results
+                </button>
+                <button class="btn btn-secondary" onclick="resetAll(); hapticFeedback()">
+                    🔄 Reset
+                </button>
+            </div>
+            <div style="height: 80px;"></div>
+        </div>
+        <!-- Floating Profit Window -->
+        <div class="floating-profit-window" id="floatingProfitWindow" style="display:none;">
+            <div class="floating-profit-header">💡 Profit Summary</div>
+            <div class="floating-profit-row"><span class="floating-profit-label">Revenue:</span> <span class="floating-profit-value" id="fpRevenue">$0</span></div>
+            <div class="floating-profit-row"><span class="floating-profit-label">Costs:</span> <span class="floating-profit-value" id="fpCosts">$0</span></div>
+            <div class="floating-profit-row"><span class="floating-profit-label">Profit:</span> <span class="floating-profit-value" id="fpNetProfit">$0</span></div>
+        </div>
+        <div class="floating-summary" id="floatingSummary">
+            <div class="summary-row">
+                <span>Revenue:</span>
+                <span id="summaryRevenue">$0</span>
+            </div>
+            <div class="summary-row">
+                <span>Costs:</span>
+                <span id="summaryCosts">$0</span>
+            </div>
+            <div class="summary-row">
+                <span>Net Profit:</span>
+                <span id="summaryProfit">$0</span>
+            </div>
+        </div>
+    </div>
+    <script>
+        // JavaScript: update sharing text & add floating profit window logic
+        let lastScrollY = 0;
+        let floatingSummaryVisible = false;
+
+        function calculate() {
+            const projectFee = parseFloat(document.getElementById('projectFee').value) || 0;
+            const equipmentRental = parseFloat(document.getElementById('equipmentRental').value) || 0;
+            const equipmentWear = parseFloat(document.getElementById('equipmentWear').value) || 0;
+            const yourHours = parseFloat(document.getElementById('yourHours').value) || 0;
+            const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+            const crewCosts = parseFloat(document.getElementById('crewCosts').value) || 0;
+            const travel = parseFloat(document.getElementById('travel').value) || 0;
+            const materials = parseFloat(document.getElementById('materials').value) || 0;
+            const postProduction = parseFloat(document.getElementById('postProduction').value) || 0;
+            const miscCosts = parseFloat(document.getElementById('miscCosts').value) || 0;
+
+            const laborCost = yourHours * hourlyRate;
+            const totalCosts = equipmentRental + equipmentWear + laborCost + crewCosts + travel + materials + postProduction + miscCosts;
+            const netProfit = projectFee - totalCosts;
+            const profitMargin = projectFee > 0 ? (netProfit / projectFee) * 100 : 0;
+            const effectiveHourly = yourHours > 0 ? netProfit / yourHours : 0;
+
+            document.getElementById('totalCosts').textContent = '$' + totalCosts.toFixed(0);
+            document.getElementById('netProfit').textContent = '$' + netProfit.toFixed(0);
+            document.getElementById('profitMargin').textContent = profitMargin.toFixed(1) + '%';
+            document.getElementById('effectiveHourly').textContent = '$' + effectiveHourly.toFixed(0);
+
+            document.getElementById('summaryRevenue').textContent = '$' + projectFee.toFixed(0);
+            document.getElementById('summaryCosts').textContent = '$' + totalCosts.toFixed(0);
+            document.getElementById('summaryProfit').textContent = '$' + netProfit.toFixed(0);
+
+            // Update floating profit window
+            document.getElementById('fpRevenue').textContent = '$' + projectFee.toFixed(0);
+            document.getElementById('fpCosts').textContent = '$' + totalCosts.toFixed(0);
+            document.getElementById('fpNetProfit').textContent = '$' + netProfit.toFixed(0);
+
+            const statusElement = document.getElementById('profitStatus');
+            if (profitMargin >= 20) {
+                statusElement.textContent = '🎉 Highly Profitable - Excellent margins!';
+                statusElement.className = 'profitability-status profitable';
+            } else if (profitMargin >= 10) {
+                statusElement.textContent = '✅ Profitable - Good margins';
+                statusElement.className = 'profitability-status profitable';
+            } else if (profitMargin >= 0) {
+                statusElement.textContent = '⚠️ Break-even - Consider raising prices';
+                statusElement.className = 'profitability-status break-even';
+            } else {
+                statusElement.textContent = '❌ Loss - Adjust pricing or costs';
+                statusElement.className = 'profitability-status unprofitable';
+            }
+
+            if (projectFee > 0 || totalCosts > 0) {
+                showFloatingSummary();
+                showFloatingProfitWindow();
+            } else {
+                hideFloatingSummary();
+                hideFloatingProfitWindow();
+            }
+
+            saveToStorage();
+        }
+
+        function hapticFeedback() {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(10);
+            }
+            const activeElement = document.activeElement;
+            if (activeElement && activeElement.tagName === 'INPUT') {
+                activeElement.classList.add('haptic');
+                setTimeout(() => activeElement.classList.remove('haptic'), 100);
+            }
+        }
+
+        function showFloatingSummary() {
+            const summary = document.getElementById('floatingSummary');
+            if (!floatingSummaryVisible) {
+                summary.classList.add('visible');
+                floatingSummaryVisible = true;
+            }
+        }
+
+        function hideFloatingSummary() {
+            const summary = document.getElementById('floatingSummary');
+            if (floatingSummaryVisible) {
+                summary.classList.remove('visible');
+                floatingSummaryVisible = false;
+            }
+        }
+
+        // Floating profit window logic
+        function showFloatingProfitWindow() {
+            document.getElementById('floatingProfitWindow').style.display = '';
+        }
+        function hideFloatingProfitWindow() {
+            document.getElementById('floatingProfitWindow').style.display = 'none';
+        }
+
+        // Touch & mouse drag for floating window, mobile/ios friendly
+        (function() {
+            const win = document.getElementById('floatingProfitWindow');
+            let isDragging = false, startX, startY, origX, origY;
+
+            function getCurrentPos() {
+                const rect = win.getBoundingClientRect();
+                return { left: rect.left, top: rect.top };
+            }
+            function dragStart(e) {
+                isDragging = true;
+                win.style.transition = 'none';
+                const ev = e.touches ? e.touches[0] : e;
+                startX = ev.clientX;
+                startY = ev.clientY;
+                const pos = getCurrentPos();
+                origX = pos.left;
+                origY = pos.top;
+                document.addEventListener('mousemove', dragMove, {passive:false});
+                document.addEventListener('touchmove', dragMove, {passive:false});
+                document.addEventListener('mouseup', dragEnd);
+                document.addEventListener('touchend', dragEnd);
+            }
+            function dragMove(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                const ev = e.touches ? e.touches[0] : e;
+                let dx = ev.clientX - startX;
+                let dy = ev.clientY - startY;
+                let newLeft = origX + dx;
+                let newTop = origY + dy;
+                // Constrain to viewport (mobile safe)
+                newLeft = Math.max(0, Math.min(window.innerWidth - win.offsetWidth, newLeft));
+                newTop = Math.max(0, Math.min(window.innerHeight - win.offsetHeight, newTop));
+                win.style.left = newLeft + 'px';
+                win.style.top = newTop + 'px';
+                win.style.right = 'auto';
+                win.style.bottom = 'auto';
+            }
+            function dragEnd() {
+                isDragging = false;
+                win.style.transition = '';
+                document.removeEventListener('mousemove', dragMove);
+                document.removeEventListener('touchmove', dragMove);
+                document.removeEventListener('mouseup', dragEnd);
+                document.removeEventListener('touchend', dragEnd);
+            }
+            win.addEventListener('touchstart', dragStart, {passive:false});
+            win.addEventListener('mousedown', dragStart, false);
+        })();
+
+        function shareResults() {
+            const projectFee = document.getElementById('projectFee').value || '0';
+            const netProfit = document.getElementById('netProfit').textContent.replace('$', '');
+            const profitMargin = document.getElementById('profitMargin').textContent;
+
+            const shareText = `Gig Profitability Analysis:
+💰 Project Fee: $${projectFee}
+📊 Net Profit: $${netProfit}
+📈 Profit Margin: ${profitMargin}
+Calculated with Gig Profitability Calculator`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Gig Profitability',
+                    text: shareText
+                }).catch(err => console.log('Share cancelled'));
+            } else {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('📋 Results copied to clipboard!');
+                }).catch(() => {
+                    alert('Unable to share. Please copy results manually.');
+                });
+            }
+        }
+
+        function resetAll() {
+            if (confirm('Reset all fields?')) {
+                document.querySelectorAll('input').forEach(input => input.value = '');
+                hideFloatingSummary();
+                hideFloatingProfitWindow();
+                calculate();
+                clearStorage();
+            }
+        }
+
+        function saveToStorage() {
+            const data = {};
+            document.querySelectorAll('input[id]').forEach(input => {
+                data[input.id] = input.value;
+            });
+            localStorage.setItem('videoCalcData', JSON.stringify(data));
+        }
+
+        function loadFromStorage() {
+            const saved = localStorage.getItem('videoCalcData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                Object.keys(data).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) element.value = data[key];
+                });
+            }
+        }
+
+        function clearStorage() {
+            localStorage.removeItem('videoCalcData');
+        }
+
+        let ticking = false;
+        function handleScroll() {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    const currentScrollY = window.scrollY;
+                    const resultsCard = document.querySelector('.results-card');
+                    const resultsRect = resultsCard.getBoundingClientRect();
+
+                    if (resultsRect.bottom < 0 && floatingSummaryVisible) {
+                    } else if (resultsRect.top > window.innerHeight && !floatingSummaryVisible) {
+                        showFloatingSummary();
+                    } else if (resultsRect.top <= window.innerHeight && resultsRect.bottom >= 0) {
+                        hideFloatingSummary();
+                    }
+
+                    lastScrollY = currentScrollY;
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFromStorage();
+            calculate();
+
+            window.addEventListener('scroll', handleScroll, { passive: true });
+
+            document.querySelectorAll('input').forEach(input => {
+                input.addEventListener('focus', () => {
+                    setTimeout(() => input.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                });
+            });
+        });
+
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                window.scrollTo(0, window.scrollY + 1);
+                window.scrollTo(0, window.scrollY - 1);
+            }, 500);
+        });
+    </script>
+</body>
+</html>
