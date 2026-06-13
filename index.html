@@ -34,6 +34,9 @@
             padding: env(safe-area-inset-top, 20px) 20px 20px 20px;
             text-align: center;
             box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         .app-title {
             font-size: 1.4rem;
@@ -43,6 +46,21 @@
         .app-subtitle {
             font-size: 0.9rem;
             opacity: 0.9;
+        }
+        .nav-link {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
         .content {
             padding: 20px 15px env(safe-area-inset-bottom, 20px) 15px;
@@ -240,8 +258,11 @@
 <body>
     <div class="app-container">
         <div class="app-header">
-            <div class="app-title">Video Profit Calculator</div>
-            <div class="app-subtitle">Quick profitability analysis for video gigs</div>
+            <div>
+                <div class="app-title">Video Profit Calculator</div>
+                <div class="app-subtitle">Quick profitability analysis for video gigs</div>
+            </div>
+            <a href="film-shotlist-schedule.html" class="nav-link">📹 Go to Film Shotlist Schedule</a>
         </div>
         <div class="content">
             <div class="card">
